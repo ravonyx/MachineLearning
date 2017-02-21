@@ -22,11 +22,20 @@ public class UseDLL : MonoBehaviour
     [DllImport("MachineLearning", EntryPoint = "LinearRegression")]
     unsafe public static extern double LinearRegression(double* model, double* inputs, int inputsSize);
 
+    [DllImport("MachineLearning", EntryPoint = "LinearCreateMLPModel")]
+    unsafe public static extern double*** LinearCreateMLPModel(int nbCouches, int* nbNeurones, int nbInputs);
+
     [SerializeField]
     Transform[] _referenceObjects;
 
     [SerializeField]
     Transform[] _fieldObjects;
+
+    [SerializeField]
+    int[] _nbNeuronesLayers;
+
+    [SerializeField]
+    int _nbIteration;
 
     enum ParameterMode { None = 1, Square};
     ParameterMode paramMode = ParameterMode.None;
@@ -148,5 +157,16 @@ public class UseDLL : MonoBehaviour
             paramMode = ParameterMode.None;
         else if (dropdown.value == 1)
             paramMode = ParameterMode.Square;
+    }
+
+    public void ApplyMultiLayerPerceptor()
+    {
+        unsafe
+        {
+            int* nbNeurones = (int*)Marshal.UnsafeAddrOfPinnedArrayElement(_nbNeuronesLayers, 0);
+            double*** w = LinearCreateMLPModel(_nbNeuronesLayers.Length, nbNeurones, 2);
+
+
+        }
     }
 }

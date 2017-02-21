@@ -83,37 +83,6 @@ extern "C"
 		return model;
 	}
 
-	double* LinearFitClassificationMulti(double* model, double* inputs, int inputsSize, int inputSize, double* outputs, int outputSize)
-	{
-		int nbIter = 100;
-
-		for (int k = 0; k < nbIter; k++)
-		{
-			for (int i = 0; i < inputsSize; i++)
-			{
-				double fitCalcul = model[0];
-
-				for (int j = 0; j < inputSize; j++)
-				{
-					fitCalcul += model[j + 1] * inputs[i * inputSize + j];
-				}
-
-				if (fitCalcul != outputs[i])
-				{
-					float outPer = tanh(fitCalcul);
-					model[0] += appro * (outputs[i] - outPer) * 1;
-
-					for (int j = 0; j < inputSize; j++)
-					{
-						model[j + 1] += appro * (outputs[i] - outPer) *  inputs[i * inputSize + j];
-					}
-				}
-			}
-		}
-
-		return model;
-	}
-
 	double* LinearFitClassificationHebb(double* model, double* inputs, int inputsSize, int inputSize, double* outputs, int outputSize)
 	{
 		return nullptr;
@@ -166,4 +135,61 @@ extern "C"
 	{
 		return nullptr;
 	}
+
+
+
+	double*** LinearCreateMLPModel(int nbCouches, int* nbNeurones, int nbInputs)
+	{
+		double*** model = new double**[nbCouches];
+		for (int i = 0; i < nbCouches; i++)
+		{
+			int nbNeuronesInLayer = nbNeurones[i];
+			model[i] = new double*[nbNeuronesInLayer];
+			for (int j = 0; j < nbNeuronesInLayer; j++)
+			{
+				model[i][j] = new double[nbInputs];
+				for (int k = 0; k < nbInputs + 1; i++)
+				{
+					model[i][j][k] = rand() % 5 - 2;
+				}
+			}
+		}
+
+		return model;
+	}
+
+
+	double* LinearFitClassificationMulti(double*** model, double* inputs, int inputsSize, int inputSize, double* outputs, int outputSize)
+	{
+
+		/*
+		int nbIter = 100;
+
+		for (int k = 0; k < nbIter; k++)
+		{
+			for (int i = 0; i < inputsSize; i++)
+			{
+				double fitCalcul = model[0];
+
+				for (int j = 0; j < inputSize; j++)
+				{
+					fitCalcul += model[j + 1] * inputs[i * inputSize + j];
+				}
+
+				if (fitCalcul != outputs[i])
+				{
+					float outPer = tanh(fitCalcul);
+					model[0] += appro * (outputs[i] - outPer) * 1;
+
+					for (int j = 0; j < inputSize; j++)
+					{
+						model[j + 1] += appro * (outputs[i] - outPer) *  inputs[i * inputSize + j];
+					}
+				}
+			}
+		}
+
+		return model;*/
+	}
+
 }
