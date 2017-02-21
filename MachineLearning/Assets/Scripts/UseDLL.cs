@@ -37,7 +37,7 @@ public class UseDLL : MonoBehaviour
     [SerializeField]
     int _nbIteration;
 
-    enum ParameterMode { None = 1, Square};
+    enum ParameterMode { None = 1, Square, Absolute, Test};
     ParameterMode paramMode = ParameterMode.None;
 
     // Update is called once per frame
@@ -58,9 +58,16 @@ public class UseDLL : MonoBehaviour
                 }
                 else if (paramMode == ParameterMode.Square)
                 {
-                    //inputsRefCsharp[i * 2] = Mathf.Pow(_referenceObjects[i].position.x,2);
-                    //inputsRefCsharp[i * 2 + 1] = Mathf.Pow(_referenceObjects[i].position.z,2);
-
+                    inputsRefCsharp[i * 2] = Mathf.Pow(_referenceObjects[i].position.x,2);
+                    inputsRefCsharp[i * 2 + 1] = Mathf.Pow(_referenceObjects[i].position.z,2);
+                }
+                else if (paramMode == ParameterMode.Absolute)
+                {
+                    inputsRefCsharp[i * 2] = Mathf.Abs(_referenceObjects[i].position.x);
+                    inputsRefCsharp[i * 2 + 1] = Mathf.Abs(_referenceObjects[i].position.z);
+                }
+                else if (paramMode == ParameterMode.Absolute)
+                {
                     inputsRefCsharp[i * 2] = Mathf.Abs(_referenceObjects[i].position.x);
                     inputsRefCsharp[i * 2 + 1] = Mathf.Abs(_referenceObjects[i].position.z);
                 }
@@ -76,9 +83,17 @@ public class UseDLL : MonoBehaviour
                 }
                 else if (paramMode == ParameterMode.Square)
                 {
-                    //inputsCsharp[i * 2] = Mathf.Pow(_fieldObjects[i].position.x, 2);
-                    //inputsCsharp[i * 2 + 1] = Mathf.Pow(_fieldObjects[i].position.z, 2);
+                    inputsCsharp[i * 2] = Mathf.Pow(_fieldObjects[i].position.x, 2);
+                    inputsCsharp[i * 2 + 1] = Mathf.Pow(_fieldObjects[i].position.z, 2);
 
+                }
+                else if (paramMode == ParameterMode.Absolute)
+                {
+                    inputsCsharp[i * 2] = Mathf.Abs(_fieldObjects[i].position.x);
+                    inputsCsharp[i * 2 + 1] = Mathf.Abs(_fieldObjects[i].position.z);
+                }
+                else if (paramMode == ParameterMode.Test)
+                {
                     inputsCsharp[i * 2] = Mathf.Abs(_fieldObjects[i].position.x);
                     inputsCsharp[i * 2 + 1] = Mathf.Abs(_fieldObjects[i].position.z);
                 }
@@ -157,6 +172,10 @@ public class UseDLL : MonoBehaviour
             paramMode = ParameterMode.None;
         else if (dropdown.value == 1)
             paramMode = ParameterMode.Square;
+        else if (dropdown.value == 2)
+            paramMode = ParameterMode.Absolute;
+        else if (dropdown.value == 3)
+            paramMode = ParameterMode.Test;
     }
 
     public void ApplyMultiLayerPerceptor()
