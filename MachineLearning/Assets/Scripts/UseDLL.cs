@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Collections;
+using UnityEngine.UI;
 
 public class UseDLL : MonoBehaviour
 {
@@ -26,10 +28,8 @@ public class UseDLL : MonoBehaviour
     [SerializeField]
     Transform[] _fieldObjects;
 
-    // Use this for initialization
-    void Start()
-    {
-    }
+    enum ParameterMode { None = 1, Square};
+    ParameterMode paramMode = ParameterMode.None;
 
     // Update is called once per frame
     void Update()
@@ -40,18 +40,39 @@ public class UseDLL : MonoBehaviour
             double[] inputsRefCsharp = new double[_referenceObjects.Length * 2];
             double[] outputsRefCsharp = new double[_referenceObjects.Length];
             double[] inputsCsharp = new double[_fieldObjects.Length * 2];
-
             for (int i = 0; i < _referenceObjects.Length; i++)
             {
-                inputsRefCsharp[i * 2] = _referenceObjects[i].position.x;
-                inputsRefCsharp[i * 2 + 1] = _referenceObjects[i].position.z;
+                if(paramMode == ParameterMode.None)
+                {
+                    inputsRefCsharp[i * 2] = _referenceObjects[i].position.x;
+                    inputsRefCsharp[i * 2 + 1] = _referenceObjects[i].position.z;
+                }
+                else if (paramMode == ParameterMode.Square)
+                {
+                    //inputsRefCsharp[i * 2] = Mathf.Pow(_referenceObjects[i].position.x,2);
+                    //inputsRefCsharp[i * 2 + 1] = Mathf.Pow(_referenceObjects[i].position.z,2);
+
+                    inputsRefCsharp[i * 2] = Mathf.Abs(_referenceObjects[i].position.x);
+                    inputsRefCsharp[i * 2 + 1] = Mathf.Abs(_referenceObjects[i].position.z);
+                }
                 outputsRefCsharp[i] = _referenceObjects[i].position.y > 0 ? 1 : 0;
             }
 
             for (int i = 0; i < _fieldObjects.Length; i++)
             {
-                inputsCsharp[i * 2] = _fieldObjects[i].position.x;
-                inputsCsharp[i * 2 + 1] = _fieldObjects[i].position.z;
+                if (paramMode == ParameterMode.None)
+                {
+                    inputsCsharp[i * 2] = _fieldObjects[i].position.x;
+                    inputsCsharp[i * 2 + 1] = _fieldObjects[i].position.z;
+                }
+                else if (paramMode == ParameterMode.Square)
+                {
+                    //inputsCsharp[i * 2] = Mathf.Pow(_fieldObjects[i].position.x, 2);
+                    //inputsCsharp[i * 2 + 1] = Mathf.Pow(_fieldObjects[i].position.z, 2);
+
+                    inputsCsharp[i * 2] = Mathf.Abs(_fieldObjects[i].position.x);
+                    inputsCsharp[i * 2 + 1] = Mathf.Abs(_fieldObjects[i].position.z);
+                }
             }
 
             unsafe
@@ -117,5 +138,15 @@ public class UseDLL : MonoBehaviour
             }
         }
         #endregion
+    }
+
+    public void onChangeParametersMode()
+    {
+        Debug.Log("On change parameter mode");
+        Dropdown dropdown = GameObject.Find("Dropdown").GetComponent<Dropdown>();
+        if (dropdown.value == 0)
+            paramMode = ParameterMode.None;
+        else if (dropdown.value == 1)
+            paramMode = ParameterMode.Square;
     }
 }
