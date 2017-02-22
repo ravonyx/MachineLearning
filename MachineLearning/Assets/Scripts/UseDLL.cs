@@ -25,6 +25,12 @@ public class UseDLL : MonoBehaviour
     [DllImport("MachineLearning", EntryPoint = "LinearCreateMLPModel")]
     unsafe public static extern double*** LinearCreateMLPModel(int nbCouches, int* nbNeurones, int nbInputs);
 
+    [DllImport("MachineLearning", EntryPoint = "LinearFitClassificationMulti")]
+    unsafe public static extern double* LinearFitClassificationMulti(double*** model, int nbCouches, int* nbNeurones, double* inputs, int inputsSize, int inputSize, double* outputs, int outputSize, int nbIter);
+
+    [DllImport("MachineLearning", EntryPoint = "LinearFitClassificationMulti")]
+    unsafe public static extern double MultiClassify(double*** model, double* inputs, int nbCouches, int* nbNeurones, int inputsSize);
+
     [SerializeField]
     Transform[] _referenceObjects;
 
@@ -35,7 +41,7 @@ public class UseDLL : MonoBehaviour
     int[] _nbNeuronesLayers;
 
     [SerializeField]
-    int _nbIteration;
+    int _nbIteration = 100;
 
     enum ParameterMode { None = 1, Square, Absolute, Test};
     ParameterMode paramMode = ParameterMode.None;
@@ -51,15 +57,15 @@ public class UseDLL : MonoBehaviour
             double[] inputsCsharp = new double[_fieldObjects.Length * 2];
             for (int i = 0; i < _referenceObjects.Length; i++)
             {
-                if(paramMode == ParameterMode.None)
+                if (paramMode == ParameterMode.None)
                 {
                     inputsRefCsharp[i * 2] = _referenceObjects[i].position.x;
                     inputsRefCsharp[i * 2 + 1] = _referenceObjects[i].position.z;
                 }
                 else if (paramMode == ParameterMode.Square)
                 {
-                    inputsRefCsharp[i * 2] = Mathf.Pow(_referenceObjects[i].position.x,2);
-                    inputsRefCsharp[i * 2 + 1] = Mathf.Pow(_referenceObjects[i].position.z,2);
+                    inputsRefCsharp[i * 2] = Mathf.Pow(_referenceObjects[i].position.x, 2);
+                    inputsRefCsharp[i * 2 + 1] = Mathf.Pow(_referenceObjects[i].position.z, 2);
                 }
                 else if (paramMode == ParameterMode.Absolute)
                 {
@@ -162,6 +168,11 @@ public class UseDLL : MonoBehaviour
             }
         }
         #endregion
+
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            ApplyMultiLayerPerceptor();
+        }
     }
 
     public void onChangeParametersMode()
@@ -182,10 +193,76 @@ public class UseDLL : MonoBehaviour
     {
         unsafe
         {
+            double[] inputsRefCsharp = new double[_referenceObjects.Length * 2];
+            double[] outputsRefCsharp = new double[_referenceObjects.Length];
+            double[] inputsCsharp = new double[_fieldObjects.Length * 2];
+            for (int i = 0; i < _referenceObjects.Length; i++)
+            {
+                if (paramMode == ParameterMode.None)
+                {
+                    inputsRefCsharp[i * 2] = _referenceObjects[i].position.x;
+                    inputsRefCsharp[i * 2 + 1] = _referenceObjects[i].position.z;
+                }
+                else if (paramMode == ParameterMode.Square)
+                {
+                    inputsRefCsharp[i * 2] = Mathf.Pow(_referenceObjects[i].position.x, 2);
+                    inputsRefCsharp[i * 2 + 1] = Mathf.Pow(_referenceObjects[i].position.z, 2);
+                }
+                else if (paramMode == ParameterMode.Absolute)
+                {
+                    inputsRefCsharp[i * 2] = Mathf.Abs(_referenceObjects[i].position.x);
+                    inputsRefCsharp[i * 2 + 1] = Mathf.Abs(_referenceObjects[i].position.z);
+                }
+                else if (paramMode == ParameterMode.Absolute)
+                {
+                    inputsRefCsharp[i * 2] = Mathf.Abs(_referenceObjects[i].position.x);
+                    inputsRefCsharp[i * 2 + 1] = Mathf.Abs(_referenceObjects[i].position.z);
+                }
+                outputsRefCsharp[i] = _referenceObjects[i].position.y > 0 ? 1 : 0;
+            }
+
+            for (int i = 0; i < _fieldObjects.Length; i++)
+            {
+                if (paramMode == ParameterMode.None)
+                {
+                    inputsCsharp[i * 2] = _fieldObjects[i].position.x;
+                    inputsCsharp[i * 2 + 1] = _fieldObjects[i].position.z;
+                }
+                else if (paramMode == ParameterMode.Square)
+                {
+                    inputsCsharp[i * 2] = Mathf.Pow(_fieldObjects[i].position.x, 2);
+                    inputsCsharp[i * 2 + 1] = Mathf.Pow(_fieldObjects[i].position.z, 2);
+
+                }
+                else if (paramMode == ParameterMode.Absolute)
+                {
+                    inputsCsharp[i * 2] = Mathf.Abs(_fieldObjects[i].position.x);
+                    inputsCsharp[i * 2 + 1] = Mathf.Abs(_fieldObjects[i].position.z);
+                }
+                else if (paramMode == ParameterMode.Test)
+                {
+                    inputsCsharp[i * 2] = Mathf.Abs(_fieldObjects[i].position.x);
+                    inputsCsharp[i * 2 + 1] = Mathf.Abs(_fieldObjects[i].position.z);
+                }
+            }
+
+            double* inputsRef = (double*)Marshal.UnsafeAddrOfPinnedArrayElement(inputsRefCsharp, 0);
+            double* outputs = (double*)Marshal.UnsafeAddrOfPinnedArrayElement(outputsRefCsharp, 0);
+
             int* nbNeurones = (int*)Marshal.UnsafeAddrOfPinnedArrayElement(_nbNeuronesLayers, 0);
-            double*** w = LinearCreateMLPModel(_nbNeuronesLayers.Length, nbNeurones, 2);
+            double*** model = LinearCreateMLPModel(_nbNeuronesLayers.Length, nbNeurones, 2);
 
+            LinearFitClassificationMulti(model, _nbNeuronesLayers.Length, nbNeurones, inputsRef, _referenceObjects.Length, 2, outputs, 1, _nbIteration);
 
+            for (int i = 0; i < _fieldObjects.Length; i++)
+            {
+                double[] inputObject = new double[2];
+                inputObject[0] = inputsCsharp[i * 2];
+                inputObject[1] = inputsCsharp[i * 2 + 1];
+
+                double* inputs = (double*)Marshal.UnsafeAddrOfPinnedArrayElement(inputObject, 0);
+                _fieldObjects[i].position = new Vector3(_fieldObjects[i].position.x, (float)MultiClassify(model, inputs, _nbNeuronesLayers.Length, nbNeurones, 2), _fieldObjects[i].position.z);
+            }
         }
     }
 }

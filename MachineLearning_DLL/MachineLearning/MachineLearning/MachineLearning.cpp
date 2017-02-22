@@ -147,8 +147,8 @@ extern "C"
 			model[i] = new double*[nbNeuronesInLayer];
 			for (int j = 0; j < nbNeuronesInLayer; j++)
 			{
-				model[i][j] = new double[nbInputs];
-				for (int k = 0; k < nbInputs + 1; i++)
+				model[i][j] = new double[nbInputs + 1];
+				for (int k = 0; k < nbInputs + 1; k++)
 				{
 					model[i][j][k] = rand() % 5 - 2;
 				}
@@ -159,37 +159,121 @@ extern "C"
 	}
 
 
-	double* LinearFitClassificationMulti(double*** model, double* inputs, int inputsSize, int inputSize, double* outputs, int outputSize)
+	double* LinearFitClassificationMulti(double*** model, int nbCouches, int* nbNeurones, double* inputs, int inputsSize, int inputSize, double* outputs, int outputSize, int nbIter)
 	{
-
-		/*
-		int nbIter = 100;
-
+		float alpha = 0.1;
 		for (int k = 0; k < nbIter; k++)
 		{
+			alpha = 0.1;
 			for (int i = 0; i < inputsSize; i++)
 			{
-				double fitCalcul = model[0];
+				double** outNeurones = new double*[nbCouches + 1];
+				outNeurones[0] = new double[inputSize];
 
 				for (int j = 0; j < inputSize; j++)
 				{
-					fitCalcul += model[j + 1] * inputs[i * inputSize + j];
+					outNeurones[0][j] = inputs[i * inputSize + j];
 				}
 
-				if (fitCalcul != outputs[i])
+				for (int j = 0; j < nbCouches; j++)
 				{
-					float outPer = tanh(fitCalcul);
-					model[0] += appro * (outputs[i] - outPer) * 1;
+					int nbNeuronesInLayer = nbNeurones[j];
+					outNeurones[j + 1] = new double[nbNeuronesInLayer];
+				}
 
-					for (int j = 0; j < inputSize; j++)
+				for (int couche = 1; couche < nbCouches + 1; couche++)
+				{
+					for (int neurone = 0; neurone < nbNeurones[couche - 1]; neurone++)
 					{
-						model[j + 1] += appro * (outputs[i] - outPer) *  inputs[i * inputSize + j];
+						double result = model[couche - 1][neurone][0] * 1;
+
+						int nbPrevNeuronesInLayer = (couche - 1 == 0) ? 2 : nbNeurones[couche - 2];
+						for (int previousNeurone = 0; previousNeurone < nbPrevNeuronesInLayer; previousNeurone++)
+						{
+							result += model[couche - 1][neurone][previousNeurone + 1] * outNeurones[couche - 1][previousNeurone];
+						}
+						outNeurones[couche][neurone] = tanh(result);
+					}
+				}
+
+				double** gradientRetro = new double*[nbCouches];
+				for (int couche = nbCouches - 1; couche >= 0; couche--)
+				{
+					gradientRetro[couche] = new double[nbNeurones[couche]];
+
+					if (couche == nbCouches - 1)
+					{
+						for (int neurone = 0; neurone < nbNeurones[couche]; neurone++)
+						{
+							gradientRetro[couche][neurone] = (1 - pow(outNeurones[couche + 1][neurone], 2)) * (outNeurones[couche + 1][neurone] - outputs[i]);
+
+							int nbPrevNeuronesInLayer = (couche - 1 == 0) ? 2 : nbNeurones[couche - 2];
+							for (int previousNeurone = 0; previousNeurone < nbPrevNeuronesInLayer; previousNeurone++)
+							{
+								model[couche][neurone][previousNeurone] -= alpha * outNeurones[couche][neurone] * gradientRetro[couche][neurone];
+							}
+						}
+					}
+					else
+					{
+						for (int neurone = 0; neurone < nbNeurones[couche]; neurone++)
+						{
+							gradientRetro[couche][neurone] = (1 - pow(outNeurones[couche][neurone], 2));
+							int somme = 0;
+
+							int nbPrevNeuronesInLayer = (couche - 1 == 0) ? 2 : nbNeurones[couche - 2];
+
+							for (int prevNeurone = 0; prevNeurone < nbNeurones[couche + 1]; prevNeurone++)
+							{
+								for (int poid = 0; poid < nbPrevNeuronesInLayer; poid++)
+								{
+									somme += model[couche + 1][prevNeurone][poid] * gradientRetro[couche + 1][prevNeurone];
+								}
+							}
+							gradientRetro[couche][neurone] *= somme;
+
+							for (int previousNeurone = 0; previousNeurone < nbPrevNeuronesInLayer; previousNeurone++)
+							{
+								model[couche][neurone][previousNeurone] -= alpha * outNeurones[couche][neurone] * gradientRetro[couche][neurone];
+							}
+						}
 					}
 				}
 			}
 		}
-
-		return model;*/
+		return nullptr;
 	}
 
+	double MultiClassify(double*** model, double* inputs, int nbCouches, int* nbNeurones, int inputsSize)
+	{
+		double** outNeurones = new double*[nbCouches + 1];
+		outNeurones[0] = new double[inputsSize];
+
+		for (int j = 0; j < inputsSize; j++)
+		{
+			outNeurones[0][j] = inputs[j];
+		}
+
+		for (int j = 0; j < nbCouches; j++)
+		{
+			int nbNeuronesInLayer = nbNeurones[j];
+			outNeurones[j + 1] = new double[nbNeuronesInLayer];
+		}
+
+		for (int couche = 0; couche < nbCouches; couche++)
+		{
+			for (int neurone = 0; neurone < nbNeurones[couche]; neurone++)
+			{
+				double fitCalcul = model[couche][neurone][0] * 1;
+				int nbPoids = (couche == 0) ? 2 : nbNeurones[couche - 1];
+				for (int poid = 1; poid <= nbPoids; poid++)
+				{
+					fitCalcul += model[couche][neurone][poid] * outNeurones[couche - 1][poid];
+				}
+				outNeurones[couche][neurone] = tanh(fitCalcul);
+			}
+		}
+
+		return outNeurones[nbCouches][0];
+	}
 }

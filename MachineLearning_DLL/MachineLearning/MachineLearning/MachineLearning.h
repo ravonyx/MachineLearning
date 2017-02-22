@@ -16,5 +16,6 @@ extern "C"
 	MACHINELEARNING_DLL_API double LinearRegression(double* model, double* inputs, int inputsSize);
 
 	MACHINELEARNING_DLL_API double*** LinearCreateMLPModel(int nbCouches, int* nbNeurones, int nbInputs);
-	MACHINELEARNING_DLL_API double* LinearFitClassificationMulti(double* model, double* inputs, int inputsSize, int inputSize, double* outputs, int outputSize);
+	MACHINELEARNING_DLL_API double* LinearFitClassificationMulti(double*** model, int nbCouches, int* nbNeurones, double* inputs, int inputsSize, int inputSize, double* outputs, int outputSize, int nbIter);
+	MACHINELEARNING_DLL_API double MultiClassify(double*** model, double* inputs, int nbCouches, int* nbNeurones, int inputsSize);
 }
